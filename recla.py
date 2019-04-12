@@ -1,12 +1,16 @@
-#!/usr/bin/python3
-
 import datetime
+import getopt
 import json
 import os
 import sys
-import getopt
 
 import requests
+from dateutil import tz
+
+__author__ = "Dimitris Gravanis"
+__copyright__ = "2019"
+__version__ = "0.0.1"
+__description__ = "Recla: easy on the eyes!"
 
 
 errors = {
@@ -14,6 +18,20 @@ errors = {
     'NO_CONTENT': 'API Response content not available',
     'NO_RESULTS': 'API sunrise/sunset results not available'
 }
+
+
+def get_opts_args():
+    """
+    Retrieve command line options and arguments
+
+    :return: lists of options/arguments
+    """
+
+    return getopt.getopt(
+        args=sys.argv[1:],
+        shortopts="z:y:d:n:",
+        longopts=["lat=", "lon=", "day_temp=", "night_temp="]
+    )
 
 
 def exit_with_error(error: str):
@@ -39,10 +57,10 @@ def api_request(options: list):
 
     json_response = None
 
-    lat = options[0][1]  # 39.63636488778663
-    lng = options[1][1]  # 22.426786422729492
+    lat = options[0][1]  # e.g. 39.63636488778663
+    lng = options[1][1]  # e.g. 22.426786422729492
 
-    url = f'https://api.sunrise-sunset.org/json?lat={lat}&lng={lng}&date=today&formatted=0'
+    url = f'https://api.sunrise-sunset.org/json?lat={lat}&lng={lng}&date=today&formatted=1'
     api_response = requests.get(url=url)
 
     if api_response:
@@ -64,10 +82,22 @@ def set_timezone(results: dict):
     Make sunrise/sunset string values timezone-aware datetime objects
 
     :param results: the API request results
-    :return: the sunrise/sunset datetime objects
+    :return: dictionary of sunrise/sunset datetime objects
     """
 
-    pass
+    tz_string = datetime.datetime.now(tz=datetime.timezone.utc).astimezone().tzname()
+    tz_obj = tz.gettz(tz_string)
+
+    return {
+        'sunrise': datetime.datetime.strptime(results['sunrise'], '%I:%M:%S %p')
+                                    .replace(tzinfo=datetime.timezone.utc)
+                                    .astimezone(tz=tz_obj)
+                                    .time(),
+        'sunset': datetime.datetime.strptime(results['sunset'], '%I:%M:%S %p')
+                                    .replace(tzinfo=datetime.timezone.utc)
+                                    .astimezone(tz=tz_obj)
+                                    .time()
+    }
 
 
 def set_color_temperature(temp: int):
@@ -75,7 +105,7 @@ def set_color_temperature(temp: int):
     Set the screen color temperature
 
     :param temp: the color temperature
-    :return:
+    :return: nothing
     """
 
     pass
@@ -83,15 +113,11 @@ def set_color_temperature(temp: int):
 
 if __name__ == '__main__':
     opts, args = None, None
-
     try:
-        opts, args = getopt.getopt(
-            args=sys.argv[1:],
-            shortopts="z:y:d:n:",
-            longopts=["lat=", "lon=", "day_temp=", "night_temp="]
-        )
+        opts, args = get_opts_args()
     except getopt.GetoptError as e:
         exit_with_error(str(e))
 
     if opts and len(opts) > 0:
         time_results = api_request(opts)
+        dt_time_results = set_timezone(results=time_results)

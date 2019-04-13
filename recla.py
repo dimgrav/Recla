@@ -3,6 +3,7 @@ import getopt
 import json
 import os
 import sys
+from copy import deepcopy
 
 import requests
 from dateutil import tz
@@ -49,7 +50,7 @@ def api_request(options: list):
     """
     Perform an HTTP GET request to https://api.sunrise-sunset.org/
     - Request a JSON response
-    - Get sunrise and sunset data in datetime object format
+    - Hande sunrise/sunset times in YYYY:MM:DDTHH:MM:SS+HH:MM format
 
     :param options: the command line options
     :return: the sunrise/sunset datetime values
@@ -60,7 +61,7 @@ def api_request(options: list):
     lat = options[0][1]  # e.g. 39.63636488778663
     lng = options[1][1]  # e.g. 22.426786422729492
 
-    url = f'https://api.sunrise-sunset.org/json?lat={lat}&lng={lng}&date=today&formatted=1'
+    url = f'https://api.sunrise-sunset.org/json?lat={lat}&lng={lng}&date=today&formatted=0'
     api_response = requests.get(url=url)
 
     if api_response:
@@ -80,6 +81,7 @@ def api_request(options: list):
 def set_timezone(results: dict):
     """
     Make sunrise/sunset string values timezone-aware datetime objects
+    - Get sunrise and sunset data in datetime object format (inc. DST)
 
     :param results: the API request results
     :return: dictionary of sunrise/sunset datetime objects
@@ -88,16 +90,15 @@ def set_timezone(results: dict):
     tz_string = datetime.datetime.now(tz=datetime.timezone.utc).astimezone().tzname()
     tz_obj = tz.gettz(tz_string)
 
-    return {
-        'sunrise': datetime.datetime.strptime(results['sunrise'], '%I:%M:%S %p')
-                                    .replace(tzinfo=datetime.timezone.utc)
-                                    .astimezone(tz=tz_obj)
-                                    .time(),
-        'sunset': datetime.datetime.strptime(results['sunset'], '%I:%M:%S %p')
-                                    .replace(tzinfo=datetime.timezone.utc)
-                                    .astimezone(tz=tz_obj)
-                                    .time()
-    }
+    results_copy = deepcopy(results)
+    for k in results_copy:
+        res_parts = results_copy[k].split("+")
+        res_parts.pop(-1)
+        res_parts.append(tz_string)
+        results_copy[k] = '+'.join(res_parts)
+        results_copy[k] = datetime.datetime.strptime('+'.join(res_parts), '%Y-%m-%dT%H:%M:%S+%Z').replace(tzinfo=datetime.timezone.utc).astimezone(tz=tz_obj)
+
+    return results_copy
 
 
 def set_color_temperature(temp: int):
@@ -121,3 +122,4 @@ if __name__ == '__main__':
     if opts and len(opts) > 0:
         time_results = api_request(opts)
         dt_time_results = set_timezone(results=time_results)
+        print(dt_time_results)

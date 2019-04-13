@@ -12,9 +12,12 @@ __author__ = "Dimitris Gravanis"
 __copyright__ = "2019"
 __version__ = "0.0.1"
 __description__ = "Recla: easy on the eyes!"
+__abs_dirpath__ = os.path.dirname(os.path.abspath(__file__))
 
 
 errors = {
+    'NOT_INT': 'Temperature value(s) must be integers',
+    'NOT_FLOAT': 'Latitude/Longitude value(s) must be floating point numbers',
     'NO_RESPONSE': 'API Response not available',
     'NO_CONTENT': 'API Response content not available',
     'NO_RESULTS': 'API sunrise/sunset results not available'
@@ -42,6 +45,7 @@ def exit_with_error(error: str):
     :param error: the error message string
     :return: nothing
     """
+
     print(error)
     sys.exit(2)
 
@@ -50,20 +54,23 @@ def api_request(options: list):
     """
     Perform an HTTP GET request to https://api.sunrise-sunset.org/
     - Request a JSON response
-    - Hande sunrise/sunset times in YYYY:MM:DDTHH:MM:SS+HH:MM format
+    - Receive sunrise/sunset times in 'YYYY:MM:DDTHH:MM:SS+HH:MM' format
 
     :param options: the command line options
-    :return: the sunrise/sunset datetime values
+    :return: the sunrise/sunset string values
     """
 
-    json_response = None
-
-    lat = options[0][1]  # e.g. 39.63636488778663
-    lng = options[1][1]  # e.g. 22.426786422729492
+    lat, lng = None, None
+    try:
+        lat = float(options[0][1])
+        lng = float(options[1][1])
+    except ValueError:
+        exit_with_error(error=errors['NOT_FLOAT'])
 
     url = f'https://api.sunrise-sunset.org/json?lat={lat}&lng={lng}&date=today&formatted=0'
     api_response = requests.get(url=url)
 
+    json_response = None
     if api_response:
         json_response = json.loads(api_response.content)
     else:
@@ -81,7 +88,7 @@ def api_request(options: list):
 def set_timezone(results: dict):
     """
     Make sunrise/sunset string values timezone-aware datetime objects
-    - Get sunrise and sunset data in datetime object format (inc. DST)
+    - Include daylight saving time (DST)
 
     :param results: the API request results
     :return: dictionary of sunrise/sunset datetime objects
@@ -101,7 +108,7 @@ def set_timezone(results: dict):
     return results_copy
 
 
-def set_color_temperature(temp: int):
+def set_color_temperature(temp: str):
     """
     Set the screen color temperature
 
@@ -109,7 +116,10 @@ def set_color_temperature(temp: int):
     :return: nothing
     """
 
-    pass
+    if not all(char.isdigit() for char in temp):
+        exit_with_error(error=errors['NOT_INT'])
+
+    os.popen(f'{__abs_dirpath__}/sct/rsct {temp}')
 
 
 if __name__ == '__main__':
@@ -119,7 +129,7 @@ if __name__ == '__main__':
     except getopt.GetoptError as e:
         exit_with_error(str(e))
 
-    if opts and len(opts) > 0:
+    if opts and 0 < len(opts) <= 4:
         time_results = api_request(opts)
         dt_time_results = set_timezone(results=time_results)
-        print(dt_time_results)
+        set_color_temperature(opts[2][1])

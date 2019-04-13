@@ -100,9 +100,7 @@ def set_timezone(results: dict):
     results_copy = deepcopy(results)
     for k in results_copy:
         res_parts = results_copy[k].split("+")
-        res_parts.pop(-1)
-        res_parts.append(tz_string)
-        results_copy[k] = '+'.join(res_parts)
+        res_parts[-1] = tz_string
         results_copy[k] = datetime.datetime.strptime('+'.join(res_parts), '%Y-%m-%dT%H:%M:%S+%Z').replace(tzinfo=datetime.timezone.utc).astimezone(tz=tz_obj)
 
     return results_copy

@@ -3,7 +3,7 @@
  * http://www.tedunangst.com/flak/post/sct-set-color-temperature
  *
  * Compile:
- * cc -std=c99 -O2 -I /usr/X11R6/include sct.c -o xsct -L /usr/X11R6/lib -lX11 -lXrandr
+ * gcc -std=c99 -O2 -I /usr/X11/include sct.c -o rsct -L /usr/X11/lib -lX11 -lXrandr
  */
 
 /* public domain, do as you wish */

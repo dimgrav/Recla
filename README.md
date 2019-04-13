@@ -10,6 +10,14 @@ Recla is a small Python application, that adjusts your screen color temperature.
 
 More soon!
 
+### Dependencies
+
+For Ubuntu-based (18.04+) distros:
+
+```
+sudo apt install libx11-dev libxrandr-dev
+```
+
 ### Install
 
 Using **Python 3**

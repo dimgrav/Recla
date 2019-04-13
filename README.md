@@ -8,9 +8,13 @@ Easy on the eyes
 
 Recla is a small Python application, that adjusts your screen color temperature.
 
+Recla uses `sct`, created by [Ted Unangst](http://www.tedunangst.com/flak/post/sct-set-color-temperature).
+
 More soon!
 
 ### Dependencies
+
+**System**
 
 For Ubuntu-based (18.04+) distros:
 
@@ -18,9 +22,9 @@ For Ubuntu-based (18.04+) distros:
 sudo apt install libx11-dev libxrandr-dev
 ```
 
-### Install
+**Python**
 
-Using **Python 3**
+Using Python 3:
 ```
 pip install -r requirements.txt
 ```
@@ -33,7 +37,7 @@ Provide x-ecute privileges to start.sh:
 chmod +x start.sh
 ```
 
-Run with short/long options
+Run with short/long options:
 
 | option            | short| long          |
 | ----------------  | ---- | --------------|

@@ -31,12 +31,6 @@ pip install -r requirements.txt
 
 ### Run
 
-Provide x-ecute privileges to start.sh:
-
-```
-chmod +x start.sh
-```
-
 Run with short/long options:
 
 | option            | short| long          |
@@ -49,9 +43,9 @@ Run with short/long options:
 For example:
 
 ```
-/path/to/start.sh -z <latitude> -y <longitude> -d <day temperature> -n <night temperature>
+python3 recla.py -z <latitude> -y <longitude> -d <day temperature> -n <night temperature>
 
-/path/to/start.sh --lat=<latitude> --lon=<longitude> --day_temp=<day temperature> --night_temp=<night temperature>
+python3 recla.py --lat=<latitude> --lon=<longitude> --day_temp=<day temperature> --night_temp=<night temperature>
 ``` 
 
   

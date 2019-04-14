@@ -49,11 +49,11 @@ main(int argc, char **argv)
 
 	XRRScreenResources *res = XRRGetScreenResourcesCurrent(dpy, root);
 
-	int temp = 6500;
+	int temp = 5800;
 	if (argc > 1)
 		temp = atoi(argv[1]);
 	if (temp < 1000 || temp > 10000)
-		temp = 6500;
+		temp = 5800;
 
 	temp -= 1000;
 	double ratio = temp % 500 / 500.0;

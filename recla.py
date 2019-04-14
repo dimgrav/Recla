@@ -1,5 +1,5 @@
+#!/usr/bin/env python3
 import datetime
-import getopt
 import json
 import os
 import sys
@@ -8,20 +8,14 @@ from copy import deepcopy
 import requests
 from dateutil import tz
 
+from lib.errors import *
+from lib.options import ReclaOptionParser, OptionError
+
 __author__ = "Dimitris Gravanis"
 __copyright__ = "2019"
 __version__ = "0.0.1"
 __description__ = "Recla: easy on the eyes!"
 __abs_dirpath__ = os.path.dirname(os.path.abspath(__file__))
-
-
-errors = {
-    'NOT_INT': 'Temperature value(s) must be integers',
-    'NOT_FLOAT': 'Latitude/Longitude value(s) must be floating point numbers',
-    'NO_RESPONSE': 'API Response not available',
-    'NO_CONTENT': 'API Response content not available',
-    'NO_RESULTS': 'API sunrise/sunset results not available'
-}
 
 
 def get_opts_args():
@@ -31,11 +25,15 @@ def get_opts_args():
     :return: lists of options/arguments
     """
 
-    return getopt.getopt(
-        args=sys.argv[1:],
-        shortopts="z:y:d:n:",
-        longopts=["lat=", "lon=", "day_temp=", "night_temp="]
-    )
+    usage = 'python %prog [options]'
+
+    parser = ReclaOptionParser(usage=usage, version=__version__, description=__description__)
+    parser.add_option('-z', '--lat', help='Latitude value', default=None)
+    parser.add_option('-y', '--lon', help='Longitude value', default=None)
+    parser.add_option('-d', '--day_temp', help='Day time color temperature', default=5800)
+    parser.add_option('-n', '--night_temp', help='Night time color temperature', default=3200)
+
+    return parser.parse_args()
 
 
 def exit_with_error(error: str):
@@ -50,31 +48,31 @@ def exit_with_error(error: str):
     sys.exit(2)
 
 
-def api_request(options: list):
+def api_request(options: dict):
     """
     Perform an HTTP GET request to https://api.sunrise-sunset.org/
     - Request a JSON response
     - Receive sunrise/sunset times in 'YYYY:MM:DDTHH:MM:SS+HH:MM' format
 
-    :param options: the command line options
+    :param options: the command line options dictionary
     :return: the sunrise/sunset string values
     """
 
-    lat, lng = None, None
+    lat, lon = None, None
     try:
-        lat = float(options[0][1])
-        lng = float(options[1][1])
+        lat = float(options['lat'] if 'lat' in options else options['z'])
+        lon = float(options['lon'] if 'lon' in options else options['y'])
     except ValueError:
-        exit_with_error(error=errors['NOT_FLOAT'])
+        exit_with_error(CoordinateError.message)
 
-    url = f'https://api.sunrise-sunset.org/json?lat={lat}&lng={lng}&date=today&formatted=0'
+    url = f'https://api.sunrise-sunset.org/json?lat={lat}&lng={lon}&date=today&formatted=0'
     api_response = requests.get(url=url)
 
     json_response = None
     if api_response:
         json_response = json.loads(api_response.content)
     else:
-        exit_with_error(error=errors['NO_RESPONSE'])
+        exit_with_error(APIResponseError.message)
 
     try:
         return {
@@ -82,7 +80,7 @@ def api_request(options: list):
             'sunset': json_response['results']['sunset']
         }
     except KeyError:
-        exit_with_error(error=errors['NO_RESULTS'])
+        exit_with_error(APIResultsError.message)
 
 
 def set_timezone(results: dict):
@@ -106,16 +104,17 @@ def set_timezone(results: dict):
     return results_copy
 
 
-def set_color_temperature(temp: str):
+def set_color_temperature(options: dict):
     """
     Set the screen color temperature
 
-    :param temp: the color temperature
+    :param options: the command line options dictionary
     :return: nothing
     """
 
+    temp = options['day_temp'] if 'day_temp' in options else options['d']
     if not all(char.isdigit() for char in temp):
-        exit_with_error(error=errors['NOT_INT'])
+        exit_with_error(TemperatureError.message)
 
     os.popen(f'{__abs_dirpath__}/sct/rsct {temp}')
 
@@ -124,10 +123,11 @@ if __name__ == '__main__':
     opts, args = None, None
     try:
         opts, args = get_opts_args()
-    except getopt.GetoptError as e:
+    except OptionError as e:
         exit_with_error(str(e))
 
-    if opts and 0 < len(opts) <= 4:
-        time_results = api_request(opts)
+    if opts:
+        opts_dict = vars(opts)
+        time_results = api_request(options=opts_dict)
         dt_time_results = set_timezone(results=time_results)
-        set_color_temperature(opts[2][1])
+        set_color_temperature(options=opts_dict)

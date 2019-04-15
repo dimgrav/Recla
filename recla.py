@@ -18,6 +18,9 @@ __description__ = "Recla: easy on the eyes!"
 __abs_dirpath__ = os.path.dirname(os.path.abspath(__file__))
 
 
+dt_format = '%Y-%m-%dT%H:%M:%S'
+
+
 def get_opts_args():
     """
     Retrieve command line options and arguments
@@ -99,24 +102,34 @@ def set_timezone(results: dict):
     for k in results_copy:
         res_parts = results_copy[k].split("+")
         res_parts[-1] = tz_string
-        results_copy[k] = datetime.datetime.strptime('+'.join(res_parts), '%Y-%m-%dT%H:%M:%S+%Z').replace(tzinfo=datetime.timezone.utc).astimezone(tz=tz_obj)
+        results_copy[k] = datetime.datetime.strptime('+'.join(res_parts), f'{dt_format}+%Z').replace(tzinfo=datetime.timezone.utc).astimezone(tz=tz_obj)
 
     return results_copy
 
 
-def set_color_temperature(options: dict):
+def set_color_temperature(temp: str):
     """
     Set the screen color temperature
 
-    :param options: the command line options dictionary
+    :param temp: the color temperature string
     :return: nothing
     """
 
-    temp = options['day_temp'] if 'day_temp' in options else options['d']
     if not all(char.isdigit() for char in temp):
         exit_with_error(TemperatureError.message)
 
     os.popen(f'{__abs_dirpath__}/sct/rsct {temp}')
+
+
+def refresh(options: dict):
+    """
+    Make a new API request and reset the sct application status for day/night time
+
+    :param options: the options dictionary
+    :return: properly formatted API response, day & night sct application status
+    """
+
+    return set_timezone(results=api_request(options=options)), False, False
 
 
 if __name__ == '__main__':
@@ -128,6 +141,19 @@ if __name__ == '__main__':
 
     if opts:
         opts_dict = vars(opts)
-        time_results = api_request(options=opts_dict)
-        dt_time_results = set_timezone(results=time_results)
-        set_color_temperature(options=opts_dict)
+        dt_time_results, applied_sct_day, applied_sct_night = refresh(options=opts_dict)
+        while True:
+            current_time = datetime.datetime.now().strftime(dt_format)
+            # set day time color temperature
+            if current_time == dt_time_results['sunrise'].strftime(dt_format) and not applied_sct_day:
+                color_temp = opts_dict['day_temp'] if 'day_temp' in opts_dict else opts_dict['d']
+                set_color_temperature(temp=color_temp)
+                applied_sct_day = True
+            # set night time color temperature
+            if current_time == dt_time_results['sunset'].strftime(dt_format) and not applied_sct_night:
+                color_temp = opts_dict['night_temp'] if 'night_temp' in opts_dict else opts_dict['n']
+                set_color_temperature(temp=color_temp)
+                applied_sct_night = True
+            # make new API request
+            if applied_sct_day and applied_sct_night:
+                dt_time_results, applied_sct_day, applied_sct_night = refresh(options=opts_dict)

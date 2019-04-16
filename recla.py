@@ -144,6 +144,7 @@ if __name__ == '__main__':
         dt_time_results, applied_sct_day, applied_sct_night = refresh(options=opts_dict)
         while True:
             current_time = datetime.datetime.now().strftime(dt_format)
+            current_date = datetime.datetime.date(datetime.datetime.now())
             # set day time color temperature
             if current_time == dt_time_results['sunrise'].strftime(dt_format) and not applied_sct_day:
                 color_temp = opts_dict['day_temp'] if 'day_temp' in opts_dict else opts_dict['d']
@@ -155,5 +156,5 @@ if __name__ == '__main__':
                 set_color_temperature(temp=color_temp)
                 applied_sct_night = True
             # make new API request
-            if applied_sct_day and applied_sct_night:
+            if applied_sct_day and applied_sct_night and current_date > dt_time_results['sunset'].date():
                 dt_time_results, applied_sct_day, applied_sct_night = refresh(options=opts_dict)

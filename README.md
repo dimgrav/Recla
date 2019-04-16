@@ -12,9 +12,11 @@ Currently, Recla requires your location coordinates in order to perform a GET re
 
 In the future, scheduled times may be used instead.
 
-Recla uses `sct`, created by [Ted Unangst](http://www.tedunangst.com/flak/post/sct-set-color-temperature).
+Recla is intended to run as a daemon/service, so its current state requires a lot of optimization.
 
-More soon!
+A GUI will also be added for configuration, so expect major functionality updates soon!
+
+*Recla uses `sct`, created by [Ted Unangst](http://www.tedunangst.com/flak/post/sct-set-color-temperature).*
 
 ### Install dependencies
 
@@ -27,7 +29,7 @@ pip install -r requirements.txt
 
 **System**
 
-If you want to compile `sct` yourself, for Ubuntu-based (18.04+) distros you will need:
+If you want to compile `sct` yourself, for Ubuntu-based distributions you will need:
 
 ```
 sudo apt install libx11-dev libxrandr-dev
@@ -46,12 +48,10 @@ Short/long options list:
 | day temperature   |  -d  | --day_temp=    |
 | night temperature |  -n  | --night_temp=  |
 
-For example:
+Example usage:
 
 ```
 python3 recla.py -z <latitude> -y <longitude> -d <day temperature> -n <night temperature>
 
 python3 recla.py --lat=<latitude> --lon=<longitude> --day_temp=<day temperature> --night_temp=<night temperature>
 ``` 
-
-  

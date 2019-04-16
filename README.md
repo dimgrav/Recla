@@ -39,12 +39,12 @@ You can currently run Recla manually.
 
 Short/long options list:
 
-| option            | short| long          |
-| ----------------- | ---- | ------------- |
-| latitude          |  -z  | --lat=        |
-| longitude         |  -y  | --lon=        |
-| day temperature   |  -d  | -day_temp=    |
-| night temperature |  -n  | -night_temp=  |
+| option            | short| long           |
+| ----------------- | ---- | -------------- |
+| latitude          |  -z  | --lat=         |
+| longitude         |  -y  | --lon=         |
+| day temperature   |  -d  | --day_temp=    |
+| night temperature |  -n  | --night_temp=  |
 
 For example:
 
